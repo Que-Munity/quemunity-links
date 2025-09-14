@@ -4,7 +4,9 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.yourcompany.quemunity",
-      "sha256_cert_fingerprints": ["YOUR_SHA256_CERT_FINGERPRINT"]
+      "sha256_cert_fingerprints": [
+        "24:2B:FC:CE:D8:AF:2F:D6:F6:0C:56:73:49:B9:F5:85:9B:8C:7E:AE:16:74:44:00:51:49:2E:FC:FD:AD:61:FE"
+      ]
     }
   }
 ]
