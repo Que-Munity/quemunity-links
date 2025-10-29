@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+}
+
+body {
+  background: #ffffff;
+  color: #000000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Only force input text to be black for readability */
+input, textarea, select {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+
+/* Make sure body text is readable but allow color inheritance */
+body {
+  color: #1f2937;
+}
+
+/* Override only problematic light text */
+.text-gray-300, .text-gray-400, .text-gray-500 {
+  color: #374151 !important;
+}
+
+/* Exceptions for navigation and specific components */
+nav *, 
+.navigation-item *,
+.bg-slate-900 *,
+.text-white,
+.text-red-500,
+.text-orange-600,
+.text-orange-500,
+.text-orange-400,
+.text-orange-300,
+.text-gray-300,
+.text-slate-700 {
+  color: inherit !important;
+}
+
+/* Button text should be readable */
+button {
+  color: #1f2937;
+}
+
+/* Navigation specific color overrides */
+nav .text-orange-500 {
+  color: #f97316 !important;
+}
+
+nav .text-orange-400 {
+  color: #fb923c !important;
+}
+
+nav .text-orange-300 {
+  color: #fdba74 !important;
+}
+
+nav a:hover.text-orange-300 {
+  color: #fdba74 !important;
+}

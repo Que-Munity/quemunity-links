@@ -1,0 +1,53 @@
+// Beta Tester System
+
+model BetaTester {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  firstName   String
+  lastName    String
+  phone       String?
+  
+  // Beta specific info
+  experience  String   // beginner, intermediate, advanced, professional
+  equipment   String   // what BBQ equipment they have
+  interests   String[] // areas of interest
+  motivation  String   // why they want to join beta
+  
+  // Status
+  status      BetaStatus @default(PENDING)
+  inviteCode  String?    @unique
+  joinedAt    DateTime   @default(now())
+  
+  // Chat
+  chatMessages ChatMessage[]
+  
+  // User connection (when they create full account)
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("beta_testers")
+}
+
+model ChatMessage {
+  id           String     @id @default(cuid())
+  betaTesterId String
+  betaTester   BetaTester @relation(fields: [betaTesterId], references: [id], onDelete: Cascade)
+  
+  message      String
+  isFromAdmin  Boolean    @default(false)
+  adminName    String?    // Name of admin who sent message
+  
+  createdAt    DateTime   @default(now())
+  
+  @@map("chat_messages")
+}
+
+enum BetaStatus {
+  PENDING
+  APPROVED
+  WAITLIST
+  REJECTED
+}

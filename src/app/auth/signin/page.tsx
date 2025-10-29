@@ -1,0 +1,238 @@
+'use client';
+
+import { useState, Suspense } from 'react';
+import { signIn } from 'next-auth/react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Github, Mail, Eye, EyeOff } from 'lucide-react';
+
+function SignInForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (isSignUp) {
+        // Handle sign up
+        const response = await fetch('/api/simple-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, username: email.split('@')[0] }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          // After successful signup, sign them in
+          const result = await signIn('credentials', {
+            email,
+            password,
+            redirect: false,
+          });
+          
+          if (result?.ok) {
+            router.push(callbackUrl);
+          } else {
+            setError('Account created but sign-in failed. Please try signing in manually.');
+          }
+        } else {
+          setError(data.message || 'Sign up failed');
+        }
+      } else {
+        // Handle sign in
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          router.push(callbackUrl);
+        } else {
+          setError('Invalid email or password');
+        }
+      }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: string) => {
+    setLoading(true);
+    try {
+      await signIn(provider, { callbackUrl });
+    } catch (error) {
+      setError('OAuth sign in failed');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="text-center">
+          <Link href="/" className="text-4xl font-bold text-orange-600">
+            🔥 Que-Munity
+          </Link>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            {isSignUp ? 'Join the Que-Munity' : 'Welcome Back, Pitmaster'}
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            {isSignUp 
+              ? 'Create your account and start your BBQ journey'
+              : 'Sign in to your BBQ community account'
+            }
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow-xl rounded-2xl sm:px-10">
+          
+          {/* OAuth Buttons - Temporarily disabled */}
+          <div className="space-y-3">
+            <div className="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-200 rounded-lg shadow-sm bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
+              <Mail className="w-5 h-5 mr-3 text-gray-400" />
+              Continue with Google (Coming Soon)
+            </div>
+            
+            <div className="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-200 rounded-lg shadow-sm bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
+              <Github className="w-5 h-5 mr-3 text-gray-400" />
+              Continue with GitHub (Coming Soon)
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Continue with email</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Email/Password Form */}
+          <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  placeholder="Your password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading 
+                  ? 'Please wait...' 
+                  : isSignUp 
+                    ? 'Create Account' 
+                    : 'Sign In'
+                }
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-6">
+            <div className="text-center">
+              <button
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                }}
+                className="text-sm text-orange-600 hover:text-orange-500 font-medium"
+              >
+                {isSignUp 
+                  ? 'Already have an account? Sign in' 
+                  : 'Need an account? Sign up'
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
+  );
+}
