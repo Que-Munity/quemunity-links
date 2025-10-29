@@ -9,37 +9,64 @@ const pool = new Pool({
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, username } = await request.json();
+    const { email, password, firstName, lastName, displayName, phone, birthday } = await request.json();
 
-    if (!email || !password) {
+    // Basic validation
+    if (!email || !password || !firstName || !lastName || !displayName || !birthday) {
       return NextResponse.json(
-        { message: 'Email and password are required' },
+        { message: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await pool.query(
+    // Check if email already exists
+    const existingByEmail = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email]
     );
 
-    if (existingUser.rows.length > 0) {
+    if (existingByEmail.rows.length > 0) {
       return NextResponse.json(
         { message: 'User already exists with this email' },
         { status: 400 }
       );
     }
 
+    // Check if display name already exists
+    const existingByDisplay = await pool.query(
+      'SELECT id FROM users WHERE display_name = $1',
+      [displayName]
+    );
+
+    if (existingByDisplay.rows.length > 0) {
+      return NextResponse.json(
+        { message: 'Display name already taken' },
+        { status: 409 }
+      );
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Parse birthday into a Date (expect yyyy-mm-dd)
+    const birthdayDate = new Date(birthday);
+
+    // Create user (attempt to insert new fields)
     const result = await pool.query(
-      `INSERT INTO users (email, password, username, name, created_at) 
-       VALUES ($1, $2, $3, $4, NOW()) 
-       RETURNING id, email, username, name`,
-      [email, hashedPassword, username || email.split('@')[0], username || email.split('@')[0]]
+      `INSERT INTO users (email, password, username, name, first_name, last_name, display_name, phone, birthday, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+       RETURNING id, email, username, name, display_name`,
+      [
+        email,
+        hashedPassword,
+        displayName || email.split('@')[0],
+        `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+        displayName,
+        phone || null,
+        isNaN(birthdayDate.getTime()) ? null : birthdayDate,
+      ]
     );
 
     const user = result.rows[0];
@@ -51,7 +78,8 @@ export async function POST(request: NextRequest) {
         id: user.id,
         email: user.email,
         username: user.username,
-        name: user.name
+        name: user.name,
+        displayName: user.display_name
       }
     });
 

@@ -9,6 +9,11 @@ import { Github, Mail, Eye, EyeOff } from 'lucide-react';
 function SignInForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [birthday, setBirthday] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,10 +31,27 @@ function SignInForm() {
     try {
       if (isSignUp) {
         // Handle sign up
+        // Basic client-side validation
+        if (!firstName || !lastName || !displayName || !email || !password || !birthday) {
+          setError('Please fill all required fields (first name, last name, display name, email, password, birthday)');
+          setLoading(false);
+          return;
+        }
+
+        const payload = {
+          firstName,
+          lastName,
+          displayName,
+          phone,
+          birthday,
+          email,
+          password,
+        };
+
         const response = await fetch('/api/simple-signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, username: email.split('@')[0] }),
+          body: JSON.stringify(payload),
         });
 
         const data = await response.json();
@@ -153,6 +175,60 @@ function SignInForm() {
                 />
               </div>
             </div>
+
+                {isSignUp && (
+                  <>
+                    <div>
+                      <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
+                        Display name
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          id="displayName"
+                          name="displayName"
+                          type="text"
+                          required
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                          placeholder="Handle or display name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First name</label>
+                        <div className="mt-1">
+                          <input id="firstName" name="firstName" type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="First name" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last name</label>
+                        <div className="mt-1">
+                          <input id="lastName" name="lastName" type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Last name" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone</label>
+                        <div className="mt-1">
+                          <input id="phone" name="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="(555) 555-5555" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
+                        <div className="mt-1">
+                          <input id="birthday" name="birthday" type="date" required value={birthday} onChange={(e) => setBirthday(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">

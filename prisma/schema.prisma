@@ -49,6 +49,9 @@ model User {
   firstName       String?
   lastName        String?
   name            String?
+  displayName     String?   @unique @map("display_name")
+  phone           String?   @map("phone")
+  birthday        DateTime? @map("birthday")
   image           String?
   emailVerified   DateTime?
   bio             String?
