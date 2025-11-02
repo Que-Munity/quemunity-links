@@ -1,19 +1,53 @@
-export default function BetaPage() {export default function BetaPage() {export default function BetaPage() {
+import { redirect } from 'next/navigation'export default function BetaPage() {export default function BetaPage() {export default function BetaPage() {export default function BetaPage() {export default function BetaPage() {
 
-  return (
 
-    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">  return (  return (
+
+export default function BetaPage() {  return (
+
+  redirect('/')
+
+}    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">  return (
 
       <div className="max-w-4xl mx-auto px-6 py-12">
 
-        <div className="text-center">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">
+        <div className="text-center">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">  return (
 
           <h1 className="text-4xl font-bold mb-6 text-orange-100">
 
-            Beta Program Temporarily Unavailable      <div className="max-w-4xl mx-auto px-6 py-12">      <div className="max-w-4xl mx-auto px-6 py-12">
+            Beta Program Temporarily Unavailable      <div className="max-w-4xl mx-auto px-6 py-12">
 
           </h1>
 
+          <p className="text-xl text-orange-200 mb-8">        <div className="text-center">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">  return (  return (
+
+            The beta program is currently being updated. Please check back soon!
+
+          </p>          <h1 className="text-4xl font-bold mb-6 text-orange-100">
+
+        </div>
+
+      </div>            Beta Program Temporarily Unavailable      <div className="max-w-4xl mx-auto px-6 py-12">
+
+    </div>
+
+  );          </h1>
+
+}
+          <p className="text-xl text-orange-200 mb-8">        <div className="text-center">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">
+
+            The beta program is currently being updated. Please check back soon!
+
+          </p>          <h1 className="text-4xl font-bold mb-6 text-orange-100">
+
+        </div>
+
+      </div>            Beta Program Temporarily Unavailable      <div className="max-w-4xl mx-auto px-6 py-12">      <div className="max-w-4xl mx-auto px-6 py-12">
+
+    </div>
+
+  );          </h1>
+
+}
           <p className="text-xl text-orange-200 mb-8">        <div className="text-center">        <div className="text-center">
 
             The beta program is currently being updated. Please check back soon!
