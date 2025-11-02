@@ -29,26 +29,25 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Use your existing simple-login logic
-          const response = await fetch(`${process.env.NEXTAUTH_URL}/api/simple-login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
+          // Use Prisma to check credentials directly
+          const bcrypt = await import('bcryptjs');
+          
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
           });
 
-          const data = await response.json();
+          if (!user || !user.password) {
+            return null;
+          }
 
-          if (response.ok && data.success) {
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+
+          if (passwordMatch) {
             return {
-              id: data.user.id,
-              email: data.user.email,
-              name: data.user.name || data.user.username,
-              username: data.user.username,
+              id: user.id,
+              email: user.email,
+              name: user.name || user.username,
+              username: user.username,
             };
           }
 
