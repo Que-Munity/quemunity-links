@@ -5,7 +5,7 @@
   "description": "A comprehensive BBQ and smoking foods recipe application for BBQ enthusiasts",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
