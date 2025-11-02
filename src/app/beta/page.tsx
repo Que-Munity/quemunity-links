@@ -1,56 +1,58 @@
+export default function BetaPage() {export default function BetaPage() {export default function BetaPage() {
+
+  return (
+
+    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">  return (  return (
+
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Left Column - Info */}
-          <div>
-            <h1 className="text-4xl font-bold mb-6" style={{ color: '#fb923c' }}>
-              Join the BBQ Revolution
-            </h1>
-            
-            <p className="text-xl text-orange-200 mb-8">
-              Be among the first 50 pitmasters to shape the future of BBQ community. 
-              Get exclusive access to premium recipes, live sessions, and direct feedback with our team.
-            </p>
 
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 text-orange-100">Direct Chat Access</h3>
-                  <p className="text-orange-200">
-                    Chat directly with our team, share feedback, and get personalized BBQ advice.
-                  </p>
-                </div>
-              </div>
+        <div className="text-center">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900">
 
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Award className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 text-orange-100">Premium Access</h3>
-                  <p className="text-orange-200">
-                    Free access to all premium recipes, tools, and features during the beta period.
-                  </p>
-                </div>
-              </div>
+          <h1 className="text-4xl font-bold mb-6 text-orange-100">
 
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 text-orange-100">Early Access</h3>
-                  <p className="text-orange-200">
-                    Be the first to try new features and influence product development.
-                  </p>
-                </div>
-              </div>
-            </div>
+            Beta Program Temporarily Unavailable      <div className="max-w-4xl mx-auto px-6 py-12">      <div className="max-w-4xl mx-auto px-6 py-12">
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mt-8">
-              <h3 className="font-semibold text-lg mb-3 text-orange-100">Beta Program Stats</h3>
+          </h1>
+
+          <p className="text-xl text-orange-200 mb-8">        <div className="text-center">        <div className="text-center">
+
+            The beta program is currently being updated. Please check back soon!
+
+          </p>          <h1 className="text-4xl font-bold mb-6 text-orange-100">          <h1 className="text-4xl font-bold mb-6 text-orange-100">
+
+          <p className="text-orange-300">
+
+            In the meantime, you can explore our recipes and community features.            Beta Program Temporarily Unavailable            Beta Program Temporarily Unavailable
+
+          </p>
+
+        </div>          </h1>          </h1>
+
+      </div>
+
+    </div>          <p className="text-xl text-orange-200 mb-8">          <p className="text-xl text-orange-200 mb-8">
+
+  );
+
+}            The beta program is currently being updated. Please check back soon!            The beta program is currently being updated. Please check back soon!
+
+          </p>          </p>
+
+          <p className="text-orange-300">        </div>
+
+            In the meantime, you can explore our recipes and community features.      </div>
+
+          </p>    </div>
+
+        </div>  );
+
+      </div>}
+
+    </div>
+
+  );            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mt-8">
+
+}              <h3 className="font-semibold text-lg mb-3 text-orange-100">Beta Program Stats</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-orange-200 text-sm">Total Applications</p>
