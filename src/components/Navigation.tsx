@@ -1,49 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { Menu, X, Flame, User, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, X, Flame, User, LogOut, ChefHat } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    // Check for logged in user
-    const checkUser = () => {
-      const currentUser = localStorage.getItem('currentUser');
-      if (currentUser) {
-        try {
-          setUser(JSON.parse(currentUser));
-        } catch (error) {
-          localStorage.removeItem('currentUser');
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    };
-
-    // Initial check
-    checkUser();
-
-    // Listen for localStorage changes (including from other tabs/windows)
-    window.addEventListener('storage', checkUser);
-    
-    // Custom event for same-tab updates
-    window.addEventListener('storage', checkUser);
-
-    return () => {
-      window.removeEventListener('storage', checkUser);
-    };
-  }, []);
-
-  const handleSignOut = () => {
-    localStorage.removeItem('currentUser');
-    setUser(null);
+  const handleSignOut = async () => {
     setIsDropdownOpen(false);
-    window.location.href = '/';
+    await signOut({ callbackUrl: '/' });
   };
 
   const baseNavItems = [
@@ -55,11 +24,23 @@ export default function Navigation() {
     { href: '/pricing', label: 'Pricing' },
   ];
 
-  const authNavItems = user 
-    ? [] 
+  const authNavItems = session
+    ? []
     : [{ href: '/auth/signin', label: 'Sign In / Sign Up' }];
 
   const navItems = [...baseNavItems, ...authNavItems];
+
+  // Get user display name
+  const getUserName = () => {
+    if (!session?.user) return null;
+    return session.user.name || session.user.username || session.user.email?.split('@')[0];
+  };
+
+  const getInitials = () => {
+    if (!session?.user) return 'U';
+    const name = getUserName();
+    return name ? name.charAt(0).toUpperCase() : 'U';
+  };
 
   return (
     <nav className="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
@@ -84,19 +65,27 @@ export default function Navigation() {
             ))}
             
             {/* User Menu */}
-            {user && (
+            {session && status === 'authenticated' && (
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center space-x-2 text-orange-400 hover:text-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg p-2"
                 >
-                  <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-semibold">
-                      {user.firstName?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  </div>
+                  {session.user.image ? (
+                    <img
+                      className="w-8 h-8 rounded-full border-2 border-orange-500"
+                      src={session.user.image}
+                      alt={getUserName() || 'User'}
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-semibold">
+                        {getInitials()}
+                      </span>
+                    </div>
+                  )}
                   <span className="font-medium">
-                    {user.firstName || user.username}
+                    {getUserName()}
                   </span>
                 </button>
 
@@ -110,17 +99,17 @@ export default function Navigation() {
                       <div className="py-2">
                         <div className="px-4 py-2 border-b border-gray-100">
                           <p className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
+                            {getUserName()}
                           </p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="text-sm text-gray-500">{session.user.email}</p>
                         </div>
-                        
+
                         <Link
                           href="/recipes/create"
                           className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                           onClick={() => setIsDropdownOpen(false)}
                         >
-                          <Flame className="w-4 h-4 mr-3" />
+                          <ChefHat className="w-4 h-4 mr-3" />
                           Create Recipe
                         </Link>
 
@@ -147,7 +136,7 @@ export default function Navigation() {
 
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100"
                         >
                           <LogOut className="w-4 h-4 mr-3" />
                           Sign Out
@@ -156,6 +145,13 @@ export default function Navigation() {
                     </div>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* Loading state */}
+            {status === 'loading' && (
+              <div className="animate-pulse">
+                <div className="w-8 h-8 bg-slate-700 rounded-full"></div>
               </div>
             )}
           </div>
@@ -191,11 +187,14 @@ export default function Navigation() {
               ))}
               
               {/* Mobile User Menu */}
-              {user && (
+              {session && status === 'authenticated' && (
                 <>
                   <div className="border-t border-slate-700 pt-2 mt-2">
-                    <div className="px-3 py-2 text-orange-300 text-sm">
-                      {user.firstName} {user.lastName}
+                    <div className="px-3 py-2 text-orange-300 text-sm font-medium">
+                      {getUserName()}
+                    </div>
+                    <div className="px-3 py-1 text-orange-400/70 text-xs">
+                      {session.user.email}
                     </div>
                     <Link
                       href="/recipes/create"
@@ -203,6 +202,13 @@ export default function Navigation() {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Create Recipe
+                    </Link>
+                    <Link
+                      href="/creator"
+                      className="block px-3 py-2 rounded-md transition-colors text-orange-400 hover:text-orange-300 hover:bg-slate-800"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Creator Dashboard
                     </Link>
                     <Link
                       href="/profile"
@@ -216,7 +222,7 @@ export default function Navigation() {
                         handleSignOut();
                         setIsMenuOpen(false);
                       }}
-                      className="block w-full text-left px-3 py-2 rounded-md transition-colors text-orange-400 hover:text-orange-300 hover:bg-slate-800"
+                      className="block w-full text-left px-3 py-2 rounded-md transition-colors text-red-400 hover:text-red-300 hover:bg-slate-800"
                     >
                       Sign Out
                     </button>
