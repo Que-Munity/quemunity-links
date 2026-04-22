@@ -97,9 +97,14 @@ model User {
   eventAttendees      LiveEventAttendee[]
   subscriptions       Subscription[]
   
+  // Forum/Community
+  posts         Post[]
+  postComments  PostComment[]
+  postVotes     PostVote[]
+
   // Beta Testing
   betaTester          BetaTester? @relation("UserBetaTester")
-  
+
   // Authentication
   accounts      Account[]
   sessions      Session[]
@@ -694,6 +699,77 @@ enum EventStatus {
   LIVE
   COMPLETED
   CANCELED
+}
+
+// Forum / Community Discussion System
+model Post {
+  id          String       @id @default(cuid())
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  title       String
+  content     String?
+  problem     String?
+  details     String?
+  category    String       @default("general")
+  tags        String[]     @default([])
+  type        PostType     @default(DISCUSSION)
+  urgency     PostUrgency?
+
+  votes       Int          @default(0)
+
+  comments    PostComment[]
+  postVotes   PostVote[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("posts")
+}
+
+model PostComment {
+  id       String @id @default(cuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  content  String
+  parentId String?
+  parent   PostComment?  @relation("PostCommentReplies", fields: [parentId], references: [id])
+  replies  PostComment[] @relation("PostCommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("post_comments")
+}
+
+model PostVote {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  value  Int // 1 for up, -1 for down
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@map("post_votes")
+}
+
+enum PostType {
+  DISCUSSION
+  QUESTION
+}
+
+enum PostUrgency {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
 
 // Beta Tester System

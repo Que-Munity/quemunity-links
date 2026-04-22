@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// import { authOptions } from '@/lib/auth';
 
 // GET /api/recipes - Get all recipes with filtering and pagination
 export async function GET(request: NextRequest) {
@@ -121,20 +121,12 @@ export async function GET(request: NextRequest) {
 // POST /api/recipes - Create a new recipe
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication - TODO: Implement with simple auth
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user?.email) {
-    //   return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    // }
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
 
-    // For now, skip auth check - TODO: implement proper auth
-    // Find the user by email
-    // const user = await prisma.user.findUnique({
-    //   where: { email: session.user.email },
-    // });
-
-    // Temporary: use first user for testing
-    const user = await prisma.user.findFirst();
+    const user = await prisma.user.findUnique({ where: { id: session.user.id as string } });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

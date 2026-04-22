@@ -1,50 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // POST /api/recipes/[id]/reviews - Create a review
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await request.json();
-    
-    // TODO: Add authentication check
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user?.id) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-    
     const { title, content, rating, wouldMakeAgain, modifications } = body;
-    
-    // Validation
+
     if (!content || !rating) {
       return NextResponse.json(
         { error: 'Content and rating are required' },
         { status: 400 }
       );
     }
-    
+
     if (rating < 1 || rating > 5) {
       return NextResponse.json(
         { error: 'Rating must be between 1 and 5' },
         { status: 400 }
       );
     }
-    
-    // Check if recipe exists
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: params.id },
-    });
-    
+
+    const recipe = await prisma.recipe.findUnique({ where: { id: id } });
     if (!recipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
-    
-    const userId = 'temp-user-id'; // TODO: Get from session
+
+    const userId = session.user.id as string;
     
     // Create or update review and rating
     const [review] = await prisma.$transaction([
@@ -53,12 +46,12 @@ export async function POST(
         where: {
           userId_recipeId: {
             userId,
-            recipeId: params.id,
+            recipeId: id,
           },
         },
         create: {
           userId,
-          recipeId: params.id,
+          recipeId: id,
           title,
           content,
           rating,
@@ -88,12 +81,12 @@ export async function POST(
         where: {
           userId_recipeId: {
             userId,
-            recipeId: params.id,
+            recipeId: id,
           },
         },
         create: {
           userId,
-          recipeId: params.id,
+          recipeId: id,
           value: rating,
         },
         update: {
@@ -116,8 +109,9 @@ export async function POST(
 // GET /api/recipes/[id]/reviews - Get reviews for a recipe
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -127,7 +121,7 @@ export async function GET(
     const [reviews, totalCount] = await Promise.all([
       prisma.review.findMany({
         where: {
-          recipeId: params.id,
+          recipeId: id,
         },
         include: {
           user: {
@@ -135,13 +129,9 @@ export async function GET(
               id: true,
               username: true,
               image: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                  skillLevel: true,
-                },
-              },
+              firstName: true,
+              lastName: true,
+              experienceLevel: true,
             },
           },
         },
@@ -150,7 +140,7 @@ export async function GET(
         take: limit,
       }),
       prisma.review.count({
-        where: { recipeId: params.id },
+        where: { recipeId: id },
       }),
     ]);
     

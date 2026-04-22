@@ -1,246 +1,231 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Clock, User, Tag, AlertCircle, Send } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Clock, User, Tag, AlertCircle, Send, Trash2, Reply } from 'lucide-react';
+
+interface PostAuthor { id: string; username: string; image?: string | null }
 
 interface Post {
   id: string;
   title: string;
-  content?: string;
-  problem?: string;
-  details?: string;
+  content?: string | null;
+  problem?: string | null;
+  details?: string | null;
   category: string;
   tags: string[];
-  author: string;
-  authorId?: string;
+  author: PostAuthor;
   createdAt: string;
   votes: number;
-  replies?: number;
-  answers?: number;
-  type?: string;
-  urgency?: string;
+  replies: number;
+  type: 'DISCUSSION' | 'QUESTION';
+  urgency?: string | null;
 }
 
-interface Comment {
+interface PostComment {
   id: string;
-  postId: string;
-  author: string;
   content: string;
   createdAt: string;
-  votes: number;
+  author: PostAuthor;
+  replies: PostComment[];
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  general: 'bg-gray-100 text-gray-800',
+  techniques: 'bg-orange-100 text-orange-800',
+  equipment: 'bg-blue-100 text-blue-800',
+  recipes: 'bg-green-100 text-green-800',
+  competition: 'bg-purple-100 text-purple-800',
+  beginners: 'bg-yellow-100 text-yellow-800',
+  showoff: 'bg-pink-100 text-pink-800',
+  troubleshooting: 'bg-red-100 text-red-800',
+};
+
+const URGENCY_COLORS: Record<string, string> = {
+  URGENT: 'bg-red-500 text-white',
+  HIGH: 'bg-orange-500 text-white',
+  NORMAL: 'bg-blue-500 text-white',
+  LOW: 'bg-gray-500 text-white',
+};
+
+function formatTimeAgo(dateString: string) {
+  const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function Avatar({ username, image }: { username: string; image?: string | null }) {
+  if (image) return <img src={image} alt={username} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />;
+  return (
+    <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+      {username[0].toUpperCase()}
+    </div>
+  );
+}
+
+function CommentItem({
+  comment, currentUserId, postId, onDeleted, onReply,
+}: {
+  comment: PostComment;
+  currentUserId?: string;
+  postId: string;
+  onDeleted: () => void;
+  onReply: (parentId: string, username: string) => void;
+}) {
+  const handleDelete = async () => {
+    if (!confirm('Delete this comment?')) return;
+    const res = await fetch(`/api/posts/${postId}/comments?commentId=${comment.id}`, { method: 'DELETE' });
+    if (res.ok) onDeleted();
+  };
+
+  return (
+    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+      <Avatar username={comment.author.username} image={comment.author.image} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-medium text-sm text-gray-900">{comment.author.username}</span>
+          <span className="text-xs text-gray-500">{formatTimeAgo(comment.createdAt)}</span>
+        </div>
+        <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => onReply(comment.id, comment.author.username)}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600"
+          >
+            <Reply className="w-3 h-3" /> Reply
+          </button>
+          {currentUserId === comment.author.id && (
+            <button onClick={handleDelete} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500">
+              <Trash2 className="w-3 h-3" /> Delete
+            </button>
+          )}
+        </div>
+        {comment.replies.length > 0 && (
+          <div className="mt-3 space-y-3 border-l-2 border-orange-100 pl-4">
+            {comment.replies.map(reply => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                currentUserId={currentUserId}
+                postId={postId}
+                onDeleted={onDeleted}
+                onReply={onReply}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function PostDetailPage() {
+  const { data: session } = useSession();
+  const params = useParams() as { id: string };
+  const postId = params.id;
+
   const [post, setPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [comments, setComments] = useState<PostComment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
-  const [userVotes, setUserVotes] = useState<any>({});
-  const router = useRouter();
-  const params = useParams();
-  const paramsObj = params as { id?: string };
+  const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [userVote, setUserVote] = useState<number | null>(null);
+
+  const fetchPost = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/posts/${postId}`);
+      if (res.ok) setPost(await res.json());
+    } catch (e) { /* */ }
+  }, [postId]);
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/posts/${postId}/comments`);
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data.comments);
+      }
+    } catch (e) { /* */ }
+  }, [postId]);
 
   useEffect(() => {
-    // Load current user
-    const user = localStorage.getItem('currentUser');
-    if (user) {
-      setCurrentUser(JSON.parse(user));
-    }
+    Promise.all([fetchPost(), fetchComments()]).finally(() => setLoading(false));
+  }, [fetchPost, fetchComments]);
 
-    // Load user votes
-    const votes = localStorage.getItem('userVotes');
-    if (votes) {
-      setUserVotes(JSON.parse(votes));
-    }
-
-    // Load post
-    const savedPosts = localStorage.getItem('communityPosts');
-    if (savedPosts && paramsObj.id) {
-      const posts = JSON.parse(savedPosts);
-      const foundPost = posts.find((p: Post) => p.id === paramsObj.id);
-      setPost(foundPost || null);
-    }
-
-    // Load comments for this post
-    const savedComments = localStorage.getItem('postComments');
-    if (savedComments && paramsObj.id) {
-      const allComments = JSON.parse(savedComments);
-      const postComments = allComments.filter((c: Comment) => c.postId === paramsObj.id);
-      setComments(postComments);
-    }
-  }, [paramsObj.id]);
-
-  const handleVote = (postId: string, direction: 'up' | 'down') => {
-    if (!currentUser) {
-      alert('Please log in to vote on posts');
-      return;
-    }
-
-    const voteKey = `${currentUser.id}_${postId}`;
-    const existingVote = userVotes[voteKey];
-
-    // If user already voted in same direction, remove vote
-    if (existingVote === direction) {
-      const newVotes = { ...userVotes };
-      delete newVotes[voteKey];
-      setUserVotes(newVotes);
-      localStorage.setItem('userVotes', JSON.stringify(newVotes));
-
-      // Update post vote count
-      updatePostVotes(postId, direction === 'up' ? -1 : 1);
-      return;
-    }
-
-    // Calculate vote change
-    let voteChange = direction === 'up' ? 1 : -1;
-    if (existingVote) {
-      // User switching vote direction (remove old vote and add new)
-      voteChange = direction === 'up' ? 2 : -2;
-    }
-
-    // Update user votes
-    const newVotes = { ...userVotes, [voteKey]: direction };
-    setUserVotes(newVotes);
-    localStorage.setItem('userVotes', JSON.stringify(newVotes));
-
-    // Update post vote count
-    updatePostVotes(postId, voteChange);
-  };
-
-  const updatePostVotes = (postId: string, change: number) => {
-    if (!post) return;
-
-    const updatedPost = { ...post, votes: post.votes + change };
-    setPost(updatedPost);
-
-    // Update in localStorage
-    const savedPosts = localStorage.getItem('communityPosts');
-    if (savedPosts) {
-      const posts = JSON.parse(savedPosts);
-      const updatedPosts = posts.map((p: Post) => 
-        p.id === postId ? updatedPost : p
-      );
-      localStorage.setItem('communityPosts', JSON.stringify(updatedPosts));
+  const handleVote = async (direction: 'up' | 'down') => {
+    if (!session?.user) { alert('Please sign in to vote'); return; }
+    const res = await fetch(`/api/posts/${postId}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ direction }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPost(prev => prev ? { ...prev, votes: data.votes } : prev);
+      setUserVote(data.userVote);
     }
   };
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      alert('Please log in to comment');
-      return;
-    }
-    if (!newComment.trim()) return;
-
-    const comment: Comment = {
-  id: Date.now().toString(),
-  postId: paramsObj.id as string,
-      author: currentUser.username,
-      content: newComment,
-      createdAt: new Date().toISOString(),
-      votes: 0
-    };
-
-    // Add comment to state
-    const updatedComments = [...comments, comment];
-    setComments(updatedComments);
-
-    // Save to localStorage
-    const allComments = JSON.parse(localStorage.getItem('postComments') || '[]');
-    allComments.push(comment);
-    localStorage.setItem('postComments', JSON.stringify(allComments));
-
-    // Update post reply/answer count
-    if (post) {
-      const updatedPost = {
-        ...post,
-        replies: post.type === 'question' ? post.answers : (post.replies || 0) + 1,
-        answers: post.type === 'question' ? (post.answers || 0) + 1 : post.replies
-      };
-      setPost(updatedPost);
-
-      // Update in posts localStorage
-      const savedPosts = localStorage.getItem('communityPosts');
-      if (savedPosts) {
-        const posts = JSON.parse(savedPosts);
-        const updatedPosts = posts.map((p: Post) => 
-          p.id === post.id ? updatedPost : p
-        );
-        localStorage.setItem('communityPosts', JSON.stringify(updatedPosts));
+    if (!newComment.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newComment.trim(), parentId: replyTo?.id ?? null }),
+      });
+      if (res.ok) {
+        setNewComment('');
+        setReplyTo(null);
+        await fetchComments();
+        await fetchPost();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to post');
       }
-    }
-
-    setNewComment('');
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else if (diffInMinutes < 1440) {
-      return `${Math.floor(diffInMinutes / 60)}h ago`;
-    } else {
-      return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      'general': 'bg-gray-100 text-gray-800',
-      'techniques': 'bg-orange-100 text-orange-800',
-      'equipment': 'bg-blue-100 text-blue-800',
-      'recipes': 'bg-green-100 text-green-800',
-      'competition': 'bg-purple-100 text-purple-800',
-      'beginners': 'bg-yellow-100 text-yellow-800',
-      'showoff': 'bg-pink-100 text-pink-800',
-      'troubleshooting': 'bg-red-100 text-red-800'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+  const handleReply = (parentId: string, username: string) => {
+    setReplyTo({ id: parentId, username });
+    setNewComment(`@${username} `);
+    document.getElementById('comment-input')?.focus();
   };
 
-  const getUrgencyColor = (urgency?: string) => {
-    switch (urgency) {
-      case 'urgent': return 'bg-red-500 text-white';
-      case 'high': return 'bg-orange-500 text-white';
-      case 'normal': return 'bg-blue-500 text-white';
-      case 'low': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
+  const totalComments = comments.reduce((s, c) => s + 1 + c.replies.length, 0);
 
-  const getUserVote = (postId: string) => {
-    if (!currentUser) return null;
-    return userVotes[`${currentUser.id}_${postId}`] || null;
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500" />
+      </div>
+    );
+  }
 
   if (!post) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Post not found</h2>
-          <Link href="/community/forum" className="text-blue-600 hover:text-blue-700">
-            ← Back to Forum
-          </Link>
+          <Link href="/community/forum" className="text-orange-600 hover:text-orange-700">← Back to Forum</Link>
         </div>
       </div>
     );
   }
 
-  const currentVote = getUserVote(post.id);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-6">
-          <Link 
-            href="/community/forum" 
-            className="flex items-center text-gray-600 hover:text-orange-600 mb-4"
-          >
+          <Link href="/community/forum" className="flex items-center text-gray-600 hover:text-orange-600 mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Forum
           </Link>
@@ -248,87 +233,79 @@ export default function PostDetailPage() {
 
         {/* Post */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
-          {/* Post Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <User className="w-5 h-5 text-gray-500" />
-                <span className="font-medium text-gray-900">{post.author}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-500">{formatTimeAgo(post.createdAt)}</span>
+              <Avatar username={post.author.username} image={post.author.image} />
+              <div>
+                <span className="font-medium text-gray-900">{post.author.username}</span>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  {formatTimeAgo(post.createdAt)}
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {post.urgency && post.type === 'question' && (
-                <span className={`px-3 py-1 text-sm rounded-full font-medium ${getUrgencyColor(post.urgency)}`}>
-                  {post.urgency.toUpperCase()}
+              {post.urgency && post.type === 'QUESTION' && (
+                <span className={`px-3 py-1 text-sm rounded-full font-medium ${URGENCY_COLORS[post.urgency] || 'bg-gray-500 text-white'}`}>
+                  {post.urgency}
                 </span>
               )}
-              <span className={`px-3 py-1 text-sm rounded-full font-medium ${getCategoryColor(post.category)}`}>
+              <span className={`px-3 py-1 text-sm rounded-full font-medium ${CATEGORY_COLORS[post.category] || 'bg-gray-100 text-gray-800'}`}>
                 {post.category}
               </span>
-              {post.type === 'question' && (
-                <AlertCircle className="w-5 h-5 text-blue-500" />
-              )}
+              {post.type === 'QUESTION' && <AlertCircle className="w-5 h-5 text-blue-500" />}
             </div>
           </div>
 
-          {/* Post Title */}
           <h1 className="text-3xl font-bold text-gray-900 mb-6">{post.title}</h1>
 
-          {/* Post Content */}
           <div className="prose max-w-none mb-6">
-            {post.type === 'question' ? (
+            {post.type === 'QUESTION' ? (
               <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h3 className="font-semibold text-blue-900 mb-2">Problem Summary:</h3>
-                  <p className="text-blue-800">{post.problem}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Detailed Description:</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{post.details}</p>
-                </div>
+                {post.problem && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h3 className="font-semibold text-blue-900 mb-2">Problem Summary:</h3>
+                    <p className="text-blue-800">{post.problem}</p>
+                  </div>
+                )}
+                {post.details && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Detailed Description:</h3>
+                    <p className="text-gray-700 whitespace-pre-wrap">{post.details}</p>
+                  </div>
+                )}
               </>
             ) : (
-              <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
+              post.content && <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
             )}
           </div>
 
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
+          {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
-              {post.tags.map((tag, index) => (
-                <span key={index} className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full">
-                  <Tag className="w-3 h-3 mr-1" />
-                  {tag}
+              {post.tags.map((tag, i) => (
+                <span key={i} className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full">
+                  <Tag className="w-3 h-3 mr-1" />{tag}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Voting and Stats */}
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => handleVote(post.id, 'up')}
+                  onClick={() => handleVote('up')}
                   className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors ${
-                    currentVote === 'up' 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'text-gray-500 hover:text-green-600 hover:bg-green-50'
+                    userVote === 1 ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'
                   }`}
                 >
                   <ThumbsUp className="w-4 h-4" />
                   <span className="text-sm font-medium">{post.votes}</span>
                 </button>
                 <button
-                  onClick={() => handleVote(post.id, 'down')}
+                  onClick={() => handleVote('down')}
                   className={`p-2 rounded-lg transition-colors ${
-                    currentVote === 'down'
-                      ? 'bg-red-100 text-red-700'
-                      : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
+                    userVote === -1 ? 'bg-red-100 text-red-700' : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
                   }`}
                 >
                   <ThumbsDown className="w-4 h-4" />
@@ -336,9 +313,7 @@ export default function PostDetailPage() {
               </div>
               <div className="flex items-center space-x-1 text-gray-500">
                 <MessageSquare className="w-4 h-4" />
-                <span className="text-sm">
-                  {comments.length} {post.type === 'question' ? 'answers' : 'replies'}
-                </span>
+                <span className="text-sm">{totalComments} {post.type === 'QUESTION' ? 'answers' : 'replies'}</span>
               </div>
             </div>
           </div>
@@ -347,34 +322,39 @@ export default function PostDetailPage() {
         {/* Comments Section */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            {post.type === 'question' ? 'Answers' : 'Comments'} ({comments.length})
+            {post.type === 'QUESTION' ? 'Answers' : 'Comments'} ({totalComments})
           </h2>
 
-          {/* Add Comment Form */}
-          {currentUser ? (
+          {session?.user ? (
             <form onSubmit={handleSubmitComment} className="mb-8">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center">
-                    {currentUser.username[0].toUpperCase()}
-                  </div>
+              {replyTo && (
+                <div className="flex items-center gap-2 mb-2 text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
+                  <Reply className="w-4 h-4" />
+                  Replying to <span className="font-semibold">{replyTo.username}</span>
+                  <button type="button" onClick={() => { setReplyTo(null); setNewComment(''); }} className="ml-auto text-gray-400 hover:text-gray-600 text-xs">
+                    Cancel
+                  </button>
                 </div>
+              )}
+              <div className="flex items-start space-x-4">
+                <Avatar username={session.user.name || session.user.email || 'U'} />
                 <div className="flex-1">
                   <textarea
+                    id="comment-input"
                     value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder={post.type === 'question' ? 'Share your solution or advice...' : 'Add your thoughts...'}
+                    onChange={e => setNewComment(e.target.value)}
+                    placeholder={post.type === 'QUESTION' ? 'Share your solution or advice...' : 'Add your thoughts...'}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                     rows={4}
                   />
                   <div className="flex justify-end mt-3">
                     <button
                       type="submit"
-                      disabled={!newComment.trim()}
+                      disabled={!newComment.trim() || submitting}
                       className="flex items-center space-x-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     >
                       <Send className="w-4 h-4" />
-                      <span>{post.type === 'question' ? 'Post Answer' : 'Post Comment'}</span>
+                      <span>{submitting ? 'Posting...' : post.type === 'QUESTION' ? 'Post Answer' : 'Post Comment'}</span>
                     </button>
                   </div>
                 </div>
@@ -383,28 +363,22 @@ export default function PostDetailPage() {
           ) : (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8 text-center">
               <p className="text-gray-600">
-                <Link href="/auth/login" className="text-blue-600 hover:text-blue-700">Log in</Link> to {post.type === 'question' ? 'answer this question' : 'join the discussion'}
+                <Link href="/auth/signin" className="text-orange-600 hover:text-orange-700 font-medium">Sign in</Link>
+                {' '}to {post.type === 'QUESTION' ? 'answer this question' : 'join the discussion'}
               </p>
             </div>
           )}
 
-          {/* Comments List */}
-          <div className="space-y-6">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                    {comment.author[0].toUpperCase()}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="font-medium text-gray-900">{comment.author}</span>
-                    <span className="text-sm text-gray-500">{formatTimeAgo(comment.createdAt)}</span>
-                  </div>
-                  <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
-                </div>
-              </div>
+          <div className="space-y-4">
+            {comments.map(comment => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                currentUserId={session?.user?.id as string | undefined}
+                postId={postId}
+                onDeleted={fetchComments}
+                onReply={handleReply}
+              />
             ))}
           </div>
 
@@ -412,10 +386,10 @@ export default function PostDetailPage() {
             <div className="text-center py-8">
               <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {post.type === 'question' ? 'No answers yet' : 'No comments yet'}
+                {post.type === 'QUESTION' ? 'No answers yet' : 'No comments yet'}
               </h3>
               <p className="text-gray-500">
-                {post.type === 'question' ? 'Be the first to help solve this problem!' : 'Start the conversation!'}
+                {post.type === 'QUESTION' ? 'Be the first to help!' : 'Start the conversation!'}
               </p>
             </div>
           )}
