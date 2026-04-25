@@ -16,6 +16,7 @@ interface Recipe {
   cookingMethod: string;
   smokingWood?: string | null;
   author: { username: string };
+  primaryImage?: string | null;
 }
 
 // Static demo recipes (keep IDs 1-4 working)
@@ -80,8 +81,12 @@ function difficultyColor(d: string) {
 function RecipeCard({ recipe }: { recipe: Recipe }) {
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-        <ChefHat className="h-16 w-16 text-white opacity-80" />
+      <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center relative overflow-hidden">
+        {recipe.primaryImage ? (
+          <img src={recipe.primaryImage} alt={recipe.title} className="w-full h-full object-cover" />
+        ) : (
+          <ChefHat className="h-16 w-16 text-white opacity-80" />
+        )}
       </div>
       <div className="p-6">
         <h3 className="text-xl font-bold text-gray-900 mb-2">{recipe.title}</h3>
@@ -151,6 +156,7 @@ export default function RecipesPage() {
             cookingMethod: r.cookingMethod,
             smokingWood: r.smokingWood,
             author: { username: r.author?.username ?? 'Unknown' },
+            primaryImage: r.images?.[0]?.url ?? null,
           }))
         );
       }

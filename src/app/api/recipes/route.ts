@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
       instructions,
       tags,
       nutrition,
+      image,
     } = body;
     
     // Create recipe with related data
@@ -223,6 +224,13 @@ export async function POST(request: NextRequest) {
                 },
               },
             })),
+          },
+        }),
+
+        // Save primary image as base64
+        ...(image && {
+          images: {
+            create: [{ url: image, isPrimary: true, order: 0 }],
           },
         }),
       },

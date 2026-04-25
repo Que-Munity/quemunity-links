@@ -48,6 +48,7 @@ interface Recipe {
   author: { id: string; username: string; image?: string | null };
   ingredients: RecipeIngredient[];
   instructions: Instruction[];
+  images: { url: string; isPrimary: boolean }[];
   tags: { tag: { id: string; name: string } }[];
   reviews: { id: string; rating: number; content: string; user: { username: string } }[];
   _count: { favorites: number; reviews: number };
@@ -226,9 +227,15 @@ export default function RecipePage() {
 
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Hero */}
-          <div className="bg-gradient-to-br from-orange-400 to-red-500 rounded-lg h-64 flex items-center justify-center mb-8">
-            <ChefHat className="h-24 w-24 text-white opacity-80" />
-          </div>
+          {recipe.images?.[0]?.url ? (
+            <div className="rounded-lg h-72 overflow-hidden mb-8">
+              <img src={recipe.images[0].url} alt={recipe.title} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-orange-400 to-red-500 rounded-lg h-64 flex items-center justify-center mb-8">
+              <ChefHat className="h-24 w-24 text-white opacity-80" />
+            </div>
+          )}
 
           {/* Stats */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">

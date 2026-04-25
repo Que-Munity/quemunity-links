@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, ChefHat } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChefHat, ImagePlus, X } from 'lucide-react';
 
 interface Ingredient {
   name: string;
@@ -60,6 +60,30 @@ export default function CreateRecipePage() {
   ]);
 
   const [tags, setTags] = useState('');
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setImageBase64(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (status === 'loading') {
     return (
@@ -137,6 +161,7 @@ export default function CreateRecipePage() {
             time: ins.time ? parseInt(ins.time) : undefined,
           })),
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          image: imageBase64 ?? undefined,
         }),
       });
 
@@ -285,6 +310,30 @@ export default function CreateRecipePage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
+              </div>
+
+              {/* Recipe Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Recipe Photo</label>
+                {imageBase64 ? (
+                  <div className="relative w-full h-56 rounded-lg overflow-hidden border border-gray-200">
+                    <img src={imageBase64} alt="Recipe preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setImageBase64(null)}
+                      className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors">
+                    <ImagePlus className="w-8 h-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Click to upload a photo</span>
+                    <span className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP (auto-resized)</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                  </label>
+                )}
               </div>
 
               <div className="flex justify-end">
