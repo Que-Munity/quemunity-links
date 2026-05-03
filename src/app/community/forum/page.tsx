@@ -110,21 +110,21 @@ export default function ForumPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Community
           </Link>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Community Forum</h1>
-              <p className="text-gray-600 mt-2">{posts.length} discussions and questions</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Community Forum</h1>
+              <p className="text-gray-600 mt-1">{posts.length} discussions and questions</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2">
               <Link
                 href="/community/create-post"
-                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
               >
                 Share Your BBQ
               </Link>
               <Link
                 href="/community/ask-question"
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
               >
                 Ask for Help
               </Link>

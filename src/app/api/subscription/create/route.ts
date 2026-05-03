@@ -1,103 +1,79 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+const PLANS = {
+  premium: { name: 'Premium BBQ Chef', amount: 499,  description: 'Ad-free browsing, unlimited saves, premium recipes' },
+  pro:     { name: 'Pro Pitmaster',    amount: 999,  description: 'Everything in Premium + creator tools & analytics' },
+};
 
-// Initialize Stripe only if keys are available (for development)
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-08-27.basil',
-    })
-  : null;
+export async function POST(request: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: 'Stripe not configured — add STRIPE_SECRET_KEY to .env.local' },
+      { status: 500 }
+    );
+  }
 
-export async function POST(req: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' });
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+  }
+
+  const { plan } = await request.json();
+  const planConfig = PLANS[plan as keyof typeof PLANS];
+  if (!planConfig) {
+    return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+  }
+
   try {
-    // Check if Stripe is configured
-    if (!stripe) {
-      return NextResponse.json(
-        { error: 'Stripe not configured. Please set STRIPE_SECRET_KEY environment variable.' },
-        { status: 500 }
-      );
-    }
+    const user = await prisma.user.findUnique({ where: { id: session.user.id as string } });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const { userId, tier } = await req.json();
-
-    if (!userId || !tier) {
-      return NextResponse.json(
-        { error: 'Missing userId or tier' },
-        { status: 400 }
-      );
-    }
-
-    // Get user
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Create or get Stripe customer
+    // Create or reuse Stripe customer
     let stripeCustomerId = user.stripeCustomerId;
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         email: user.email,
-        name: user.name || `${user.firstName} ${user.lastName}`,
-        metadata: { userId },
+        name: user.name ?? user.username,
+        metadata: { userId: user.id },
       });
-      
       stripeCustomerId = customer.id;
-      
-      // Update user with Stripe customer ID
-      await prisma.user.update({
-        where: { id: userId },
-        data: { stripeCustomerId },
-      });
+      await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId } });
     }
 
-    // Define pricing
-    const prices = {
-      premium: process.env.STRIPE_PREMIUM_PRICE_ID!,
-      pro: process.env.STRIPE_PRO_PRICE_ID!,
-    };
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
-    if (!prices[tier as keyof typeof prices]) {
-      return NextResponse.json(
-        { error: 'Invalid tier' },
-        { status: 400 }
-      );
-    }
-
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Use inline price_data — no pre-created Price IDs needed
+    const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ['card'],
       mode: 'subscription',
-      line_items: [
-        {
-          price: prices[tier as keyof typeof prices],
-          quantity: 1,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          recurring: { interval: 'month' },
+          product_data: {
+            name: planConfig.name,
+            description: planConfig.description,
+          },
+          unit_amount: planConfig.amount,
         },
-      ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription/cancel`,
-      metadata: {
-        userId,
-        tier,
-      },
+        quantity: 1,
+      }],
+      success_url: `${appUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/pricing`,
+      metadata: { userId: user.id, plan },
+      allow_promotion_codes: true,
     });
 
-    return NextResponse.json({ sessionId: session.id });
-  } catch (error) {
-    console.error('Subscription creation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create subscription' },
-      { status: 500 }
-    );
+    return NextResponse.json({ checkoutUrl: checkoutSession.url });
+  } catch (error: any) {
+    console.error('Stripe error:', error);
+    return NextResponse.json({ error: error.message ?? 'Failed to create checkout' }, { status: 500 });
   }
 }

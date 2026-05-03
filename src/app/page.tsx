@@ -9,13 +9,13 @@ export default function HomePage() {
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900 mb-6">
               The Ultimate
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
                 {" "}BBQ Community
               </span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Join thousands of BBQ enthusiasts sharing recipes, techniques, and the passion for perfectly smoked meats. 
               From beginner tips to competition secrets - we've got your pit covered.
             </p>
@@ -55,16 +55,16 @@ export default function HomePage() {
       {/* Features Section */}
       <section id="features" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
               Everything You Need for Perfect BBQ
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg sm:text-xl text-gray-600">
               From recipes to community, we've got all the tools for your BBQ journey
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
               <div className="bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                 <ChefHat className="h-8 w-8 text-orange-600" />
@@ -111,7 +111,7 @@ export default function HomePage() {
       {/* Stats Section */}
       <section className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-orange-600 mb-2">5,000+</div>
               <div className="text-lg text-gray-600">BBQ Recipes</div>
@@ -131,8 +131,8 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-orange-600 to-red-600 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Master the Art of BBQ?</h2>
-          <p className="text-xl mb-8 opacity-90">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Master the Art of BBQ?</h2>
+          <p className="text-lg sm:text-xl mb-8 opacity-90">
             Join our community of passionate pitmasters and take your BBQ skills to the next level
           </p>
           <Link
@@ -146,40 +146,40 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Flame className="h-6 w-6 text-orange-400" />
-                <span className="text-xl font-bold">Que-Munity</span>
+                <span className="text-xl font-bold text-white">Que-Munity</span>
               </div>
               <p className="text-gray-400">
                 The ultimate destination for BBQ enthusiasts worldwide.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Community</h3>
+              <h3 className="font-semibold mb-4 text-white">Community</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/recipes" className="hover:text-white">Recipes</Link></li>
-                <li><Link href="/forums" className="hover:text-white">Forums</Link></li>
-                <li><Link href="/events" className="hover:text-white">Events</Link></li>
+                <li><Link href="/recipes" className="hover:text-white transition-colors">Recipes</Link></li>
+                <li><Link href="/community/forum" className="hover:text-white transition-colors">Forums</Link></li>
+                <li><Link href="/community" className="hover:text-white transition-colors">Events</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Resources</h3>
+              <h3 className="font-semibold mb-4 text-white">Resources</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/guides" className="hover:text-white">Guides</Link></li>
-                <li><Link href="/tools" className="hover:text-white">Tools</Link></li>
-                <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
+                <li><Link href="/guides" className="hover:text-white transition-colors">Guides</Link></li>
+                <li><Link href="/tools" className="hover:text-white transition-colors">Tools</Link></li>
+                <li><Link href="/recipes" className="hover:text-white transition-colors">Blog</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
+              <h3 className="font-semibold mb-4 text-white">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/help" className="hover:text-white">Help Center</Link></li>
-                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
               </ul>
             </div>
           </div>

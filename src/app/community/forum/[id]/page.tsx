@@ -232,8 +232,8 @@ export default function PostDetailPage() {
         </div>
 
         {/* Post */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
-          <div className="flex items-start justify-between mb-4">
+        <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 mb-8">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div className="flex items-center space-x-3">
               <Avatar username={post.author.username} image={post.author.image} />
               <div>
@@ -244,20 +244,20 @@ export default function PostDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               {post.urgency && post.type === 'QUESTION' && (
-                <span className={`px-3 py-1 text-sm rounded-full font-medium ${URGENCY_COLORS[post.urgency] || 'bg-gray-500 text-white'}`}>
+                <span className={`px-2 py-1 text-xs rounded-full font-medium ${URGENCY_COLORS[post.urgency] || 'bg-gray-500 text-white'}`}>
                   {post.urgency}
                 </span>
               )}
-              <span className={`px-3 py-1 text-sm rounded-full font-medium ${CATEGORY_COLORS[post.category] || 'bg-gray-100 text-gray-800'}`}>
+              <span className={`px-2 py-1 text-xs rounded-full font-medium ${CATEGORY_COLORS[post.category] || 'bg-gray-100 text-gray-800'}`}>
                 {post.category}
               </span>
-              {post.type === 'QUESTION' && <AlertCircle className="w-5 h-5 text-blue-500" />}
+              {post.type === 'QUESTION' && <AlertCircle className="w-4 h-4 text-blue-500" />}
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">{post.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-5">{post.title}</h1>
 
           <div className="prose max-w-none mb-6">
             {post.type === 'QUESTION' ? (

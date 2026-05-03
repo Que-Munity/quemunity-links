@@ -194,14 +194,14 @@ export default function RecipesPage() {
               Back to Home
             </Link>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">BBQ Recipes</h1>
-              <p className="text-xl text-gray-600">Discover authentic barbecue recipes from pitmasters around the world</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">BBQ Recipes</h1>
+              <p className="text-base sm:text-xl text-gray-600">Discover authentic barbecue recipes from pitmasters around the world</p>
             </div>
             <Link
               href="/recipes/create"
-              className="flex items-center gap-2 bg-orange-600 text-white px-5 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              className="flex items-center gap-2 bg-orange-600 text-white px-5 py-3 rounded-lg hover:bg-orange-700 transition-colors font-medium self-start sm:self-auto flex-shrink-0"
             >
               <Plus className="h-5 w-5" />
               Add Recipe
