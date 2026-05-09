@@ -1,3 +1,4 @@
+// Feedback API — saves user feedback (name, email, message) to Supabase
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
