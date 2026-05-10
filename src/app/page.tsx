@@ -37,14 +37,14 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Beta Notice */}
+        {/* Launch Notice */}
         <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="text-center">
               <p className="text-lg font-semibold">
-                🚀 We're launching soon! 
-                <Link href="/beta" className="underline hover:no-underline ml-2">
-                  Sign up for early access →
+                🚀 We're live!
+                <Link href="/auth/signin" className="underline hover:no-underline ml-2">
+                  Create your free account →
                 </Link>
               </p>
             </div>
@@ -136,7 +136,7 @@ export default function HomePage() {
             Join our community of passionate pitmasters and take your BBQ skills to the next level
           </p>
           <Link
-            href="/beta"
+            href="/recipes"
             className="bg-white text-orange-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-50 transition-colors inline-flex items-center justify-center"
           >
             <Flame className="mr-2 h-5 w-5" />

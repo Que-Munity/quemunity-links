@@ -21,7 +21,7 @@ export default function Navigation() {
     { href: '/community', label: 'Que-Munity' },
     { href: '/tools', label: 'BBQ Tools' },
     { href: '/guides', label: 'Guides' },
-    { href: '/pricing', label: 'Pricing' },
+    { href: '/subscription', label: 'Premium' },
   ];
 
   const authNavItems = session

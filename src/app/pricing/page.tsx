@@ -1,9 +1,5 @@
-import SubscriptionPlans from '@/components/SubscriptionPlans';
+import { redirect } from 'next/navigation';
 
 export default function PricingPage() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <SubscriptionPlans />
-    </div>
-  );
+  redirect('/subscription');
 }
