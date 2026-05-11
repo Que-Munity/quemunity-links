@@ -38,6 +38,10 @@ export async function GET(request: NextRequest) {
     if (cookingMethod) {
       where.cookingMethod = cookingMethod.toUpperCase();
     }
+
+    if (category) {
+      where.category = category;
+    }
     
     // Calculate pagination
     const skip = (page - 1) * limit;
@@ -146,6 +150,7 @@ export async function POST(request: NextRequest) {
       internalTemp,
       sauce,
       seasoningRub,
+      category,
       ingredients,
       instructions,
       tags,
@@ -165,6 +170,7 @@ export async function POST(request: NextRequest) {
         servings,
         difficulty: difficulty.toUpperCase(),
         cookingMethod: cookingMethod.toUpperCase(),
+        category: category || 'Other',
         smokingWood,
         smokerTemp,
         internalTemp,

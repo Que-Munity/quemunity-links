@@ -43,7 +43,7 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { content, parentId } = await request.json();
+    const { content, parentId, imageUrl } = await request.json();
 
     if (!content?.trim()) {
       return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
@@ -57,6 +57,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
+        imageUrl: imageUrl ?? null,
         recipeId: id,
         userId: session.user.id as string,
         ...(parentId && { parentId }),

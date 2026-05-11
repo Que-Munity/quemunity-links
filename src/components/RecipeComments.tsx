@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { MessageCircle, Send, Trash2, Reply, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageCircle, Send, Trash2, Reply, ChevronDown, ChevronUp, Image, X } from 'lucide-react';
 
 interface CommentUser {
   id: string;
@@ -13,6 +13,7 @@ interface CommentUser {
 interface Comment {
   id: string;
   content: string;
+  imageUrl?: string | null;
   createdAt: string;
   user: CommentUser;
   replies: Comment[];
@@ -32,7 +33,7 @@ function formatTimeAgo(dateString: string) {
 
 function Avatar({ username, image }: { username: string; image?: string | null }) {
   if (image) {
-    return <img src={image} alt={username} className="w-8 h-8 rounded-full object-cover" />;
+    return <img src={image} alt={username} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />;
   }
   return (
     <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
@@ -68,6 +69,16 @@ function CommentItem({
               <span className="text-xs text-gray-400">{formatTimeAgo(comment.createdAt)}</span>
             </div>
             <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
+            {comment.imageUrl && (
+              <div className="mt-2">
+                <img
+                  src={comment.imageUrl}
+                  alt="Comment attachment"
+                  className="max-h-64 rounded-lg object-cover cursor-pointer"
+                  onClick={() => window.open(comment.imageUrl!, '_blank')}
+                />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3 mt-1 px-1">
             {depth === 0 && (
@@ -124,8 +135,10 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -134,16 +147,19 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
         const data = await res.json();
         setComments(data.comments);
       }
-    } catch (error) {
-      console.error('Failed to load comments:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
+    finally { setLoading(false); }
   }, [recipeId]);
 
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+  useEffect(() => { fetchComments(); }, [fetchComments]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,18 +173,21 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
         body: JSON.stringify({
           content: newComment.trim(),
           parentId: replyTo?.id ?? null,
+          imageUrl: imagePreview ?? null,
         }),
       });
 
       if (res.ok) {
         setNewComment('');
         setReplyTo(null);
+        setImagePreview(null);
+        if (fileRef.current) fileRef.current.value = '';
         await fetchComments();
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to post comment');
       }
-    } catch (error) {
+    } catch {
       alert('Failed to post comment');
     } finally {
       setSubmitting(false);
@@ -178,13 +197,9 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
   const handleDelete = async (commentId: string) => {
     if (!confirm('Delete this comment?')) return;
     try {
-      const res = await fetch(`/api/recipes/${recipeId}/comments?commentId=${commentId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        await fetchComments();
-      }
-    } catch (error) {
+      const res = await fetch(`/api/recipes/${recipeId}/comments?commentId=${commentId}`, { method: 'DELETE' });
+      if (res.ok) await fetchComments();
+    } catch {
       alert('Failed to delete comment');
     }
   };
@@ -233,7 +248,28 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-sm"
               />
-              <div className="flex justify-end mt-2">
+              {imagePreview && (
+                <div className="relative mt-2 inline-block">
+                  <img src={imagePreview} alt="Preview" className="max-h-40 rounded-lg object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { setImagePreview(null); if (fileRef.current) fileRef.current.value = ''; }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center justify-between mt-2">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-orange-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-orange-50"
+                >
+                  <Image className="w-4 h-4" />
+                  Add photo
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 <button
                   type="submit"
                   disabled={!newComment.trim() || submitting}
@@ -249,10 +285,7 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
       ) : (
         <div className="bg-gray-50 rounded-lg p-4 mb-6 text-center">
           <p className="text-gray-600 text-sm mb-2">Sign in to join the conversation</p>
-          <a
-            href="/auth/signin"
-            className="inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm font-medium"
-          >
+          <a href="/auth/signin" className="inline-block bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm font-medium">
             Sign In
           </a>
         </div>
@@ -264,9 +297,7 @@ export default function RecipeComments({ recipeId }: RecipeCommentsProps) {
           {[1, 2, 3].map(i => (
             <div key={i} className="flex gap-3 animate-pulse">
               <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0" />
-              <div className="flex-1">
-                <div className="h-16 bg-gray-100 rounded-lg" />
-              </div>
+              <div className="flex-1"><div className="h-16 bg-gray-100 rounded-lg" /></div>
             </div>
           ))}
         </div>

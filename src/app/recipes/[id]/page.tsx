@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft, Clock, Users, Star, ChefHat, Thermometer, TreePine, Printer, Heart, Share2, Flame } from 'lucide-react';
 import RecipeReviews from '@/components/RecipeReviews';
 import RecipeComments from '@/components/RecipeComments';
+import ShareButton from '@/components/ShareButton';
 import { initializeSampleReviews } from '@/utils/sampleReviews';
 
 interface RecipeIngredient {
@@ -214,9 +215,7 @@ export default function RecipePage() {
                 <button className="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600">
                   <Heart className="h-5 w-5 mr-1" />Save
                 </button>
-                <button className="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600">
-                  <Share2 className="h-5 w-5 mr-1" />Share
-                </button>
+                <ShareButton title={recipe.title} />
                 <button className="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600">
                   <Printer className="h-5 w-5 mr-1" />Print
                 </button>
@@ -410,9 +409,7 @@ export default function RecipePage() {
               <button className="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600">
                 <Heart className="h-5 w-5 mr-1" />Save
               </button>
-              <button className="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600">
-                <Share2 className="h-5 w-5 mr-1" />Share
-              </button>
+              <ShareButton title={mock.title} />
             </div>
           </div>
         </div>

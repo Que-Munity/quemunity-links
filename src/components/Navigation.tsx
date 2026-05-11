@@ -1,14 +1,58 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Menu, X, Flame, User, LogOut, ChefHat } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, X, Flame, User, LogOut, ChefHat, Bell } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
+
+interface Notification {
+  id: string;
+  type: string;
+  message: string;
+  link?: string | null;
+  read: boolean;
+  actorName?: string | null;
+  createdAt: string;
+}
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notifRef = useRef<HTMLDivElement>(null);
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (!session?.user) return;
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+      }
+    } catch {}
+  };
+
+  const markAllRead = async () => {
+    await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
+
+  const markRead = async (id: string) => {
+    await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  };
 
   const handleSignOut = async () => {
     setIsDropdownOpen(false);
@@ -64,6 +108,62 @@ export default function Navigation() {
               </Link>
             ))}
             
+            {/* Notification Bell */}
+            {session && status === 'authenticated' && (
+              <div className="relative" ref={notifRef}>
+                <button
+                  onClick={() => { setIsNotifOpen(!isNotifOpen); if (!isNotifOpen && unreadCount > 0) markAllRead(); }}
+                  className="relative p-2 text-orange-400 hover:text-orange-300"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-6 h-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {isNotifOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsNotifOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-20 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        {notifications.some(n => !n.read) && (
+                          <button onClick={markAllRead} className="text-xs text-orange-600 hover:text-orange-700 font-medium">
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-gray-400 text-sm">No notifications yet</div>
+                        ) : notifications.map(n => (
+                          <div
+                            key={n.id}
+                            className={`px-4 py-3 hover:bg-gray-50 transition-colors ${!n.read ? 'bg-orange-50' : ''}`}
+                          >
+                            {n.link ? (
+                              <Link href={n.link} onClick={() => { markRead(n.id); setIsNotifOpen(false); }} className="block">
+                                <p className="text-sm text-gray-800">{n.message}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{new Date(n.createdAt).toLocaleDateString()}</p>
+                              </Link>
+                            ) : (
+                              <div onClick={() => markRead(n.id)} className="cursor-default">
+                                <p className="text-sm text-gray-800">{n.message}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{new Date(n.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* User Menu */}
             {session && status === 'authenticated' && (
               <div className="relative">

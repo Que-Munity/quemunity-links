@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { ChefHat, Thermometer, Timer, Users, Award, Flame, Star } from 'lucide-react';
+import { ChefHat, Thermometer, Timer, Users, Flame } from 'lucide-react';
+import TrendingRecipes from '@/components/TrendingRecipes';
 
-export default function HomePage() {
+export default async function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-yellow-50">
 
@@ -122,6 +123,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Trending Recipes */}
+      <TrendingRecipes />
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-orange-600 to-red-600 text-white py-16">

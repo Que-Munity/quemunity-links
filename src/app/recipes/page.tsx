@@ -128,17 +128,31 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
   );
 }
 
+const CATEGORIES = [
+  { label: 'All', emoji: '🔥' },
+  { label: 'Beef', emoji: '🥩' },
+  { label: 'Pork', emoji: '🐷' },
+  { label: 'Poultry', emoji: '🍗' },
+  { label: 'Seafood', emoji: '🦐' },
+  { label: 'Wild Game', emoji: '🦌' },
+  { label: 'Sides', emoji: '🌽' },
+  { label: 'Desserts', emoji: '🍮' },
+  { label: 'Other', emoji: '✨' },
+];
+
 export default function RecipesPage() {
   const [dbRecipes, setDbRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   const fetchRecipes = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: '100' });
       if (selectedDifficulty) params.set('difficulty', selectedDifficulty);
       if (searchTerm) params.set('search', searchTerm);
+      if (selectedCategory && selectedCategory !== 'All') params.set('category', selectedCategory);
 
       const res = await fetch(`/api/recipes?${params}`);
       if (res.ok) {
@@ -165,7 +179,7 @@ export default function RecipesPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDifficulty, searchTerm]);
+  }, [selectedDifficulty, searchTerm, selectedCategory]);
 
   useEffect(() => {
     fetchRecipes();
@@ -207,6 +221,23 @@ export default function RecipesPage() {
               Add Recipe
             </Link>
           </div>
+        </div>
+
+        {/* Category chips */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.label}
+              onClick={() => setSelectedCategory(cat.label)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-2 text-sm font-medium transition-all ${
+                selectedCategory === cat.label
+                  ? 'border-orange-500 bg-orange-500 text-white'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300'
+              }`}
+            >
+              <span>{cat.emoji}</span> {cat.label}
+            </button>
+          ))}
         </div>
 
         {/* Search and Filters */}

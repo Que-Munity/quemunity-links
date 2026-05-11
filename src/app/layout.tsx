@@ -4,6 +4,7 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 import Navigation from "@/components/Navigation";
 import SubscriptionBanner from "@/components/SubscriptionBanner";
+import OnboardingGate from "@/components/OnboardingGate";
 import Script from 'next/script';
 
 const geistSans = Geist({
@@ -62,6 +63,7 @@ export default function RootLayout({
         <SessionProvider>
           <Navigation />
           <SubscriptionBanner />
+          <OnboardingGate />
           <main>
             {children}
           </main>

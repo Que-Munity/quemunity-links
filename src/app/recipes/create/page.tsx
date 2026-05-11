@@ -20,6 +20,17 @@ interface Instruction {
   time: string;
 }
 
+const CATEGORIES = [
+  { label: 'Beef', emoji: '🥩' },
+  { label: 'Pork', emoji: '🐷' },
+  { label: 'Poultry', emoji: '🍗' },
+  { label: 'Seafood', emoji: '🦐' },
+  { label: 'Wild Game', emoji: '🦌' },
+  { label: 'Sides', emoji: '🌽' },
+  { label: 'Desserts', emoji: '🍮' },
+  { label: 'Other', emoji: '🔥' },
+];
+
 const COOKING_METHODS = [
   'SMOKING', 'PELLET_SMOKER', 'OFFSET_SMOKER', 'GRILLING',
   'ROASTING', 'BRAISING', 'FRYING', 'BAKING', 'STEAMING', 'BOILING', 'OTHER',
@@ -41,6 +52,7 @@ export default function CreateRecipePage() {
     servings: '',
     difficulty: 'MEDIUM',
     cookingMethod: 'SMOKING',
+    category: 'Other',
   });
 
   const [bbqDetails, setBbqDetails] = useState({
@@ -160,6 +172,7 @@ export default function CreateRecipePage() {
             temperature: ins.temperature ? parseInt(ins.temperature) : undefined,
             time: ins.time ? parseInt(ins.time) : undefined,
           })),
+          category: basics.category,
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           image: imageBase64 ?? undefined,
         }),
@@ -228,6 +241,28 @@ export default function CreateRecipePage() {
           {/* Basics Tab */}
           {activeTab === 'basics' && (
             <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Category *</label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat.label}
+                      type="button"
+                      onClick={() => setBasics(p => ({ ...p, category: cat.label }))}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 font-medium text-sm transition-all ${
+                        basics.category === cat.label
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300'
+                      }`}
+                    >
+                      <span>{cat.emoji}</span>
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Recipe Title *</label>
                 <input

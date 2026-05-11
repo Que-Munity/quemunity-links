@@ -103,6 +103,16 @@ model User {
   postComments  PostComment[]
   postVotes     PostVote[]
 
+  // Notifications
+  notifications Notification[]
+
+  // Onboarding
+  onboardingDone Boolean  @default(false)
+  favoriteMeats  String[] @default([])
+  cookerType     String?
+  skillLevel     String?
+  bbqStyle       String?
+
   // Beta Testing
   betaTester          BetaTester? @relation("UserBetaTester")
 
@@ -140,6 +150,9 @@ model Recipe {
   servings    Int
   difficulty  Difficulty
   
+  // Category
+  category       String   @default("Other")
+
   // BBQ specific
   smokingWood    String?
   smokerTemp     Int?     // Fahrenheit
@@ -305,10 +318,11 @@ model Comment {
   recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   
   content  String
+  imageUrl String?
   parentId String?
   parent   Comment? @relation("CommentReplies", fields: [parentId], references: [id])
   replies  Comment[] @relation("CommentReplies")
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -736,6 +750,8 @@ model PostComment {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   content  String
+  imageUrl String?
+  likes    Int     @default(0)
   parentId String?
   parent   PostComment?  @relation("PostCommentReplies", fields: [parentId], references: [id])
   replies  PostComment[] @relation("PostCommentReplies")
@@ -825,6 +841,21 @@ model ChatMessage {
 //   WAITLIST
 //   REJECTED
 // }
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String   // like, comment, follow, reply, save, competition
+  message    String
+  link       String?
+  read       Boolean  @default(false)
+  actorName  String?
+  actorImage String?
+  createdAt  DateTime @default(now())
+
+  @@map("notifications")
+}
 
 model Feedback {
   id        String   @id @default(cuid())
