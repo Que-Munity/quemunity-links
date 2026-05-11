@@ -12,7 +12,7 @@ export default function HomePage() {
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900 mb-6">
               The Ultimate
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
-                {" "}BBQ Community
+                {" "}BBQ QueMunity
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
@@ -27,26 +27,21 @@ export default function HomePage() {
               >
                 Browse Recipes
               </Link>
-              <Link
-                href="#features"
-                className="bg-white text-orange-600 border-2 border-orange-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-50 transition-colors"
-              >
-                Learn More
-              </Link>
             </div>
           </div>
         </div>
 
-        {/* Launch Notice */}
+        {/* Premium Banner */}
         <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="text-center">
-              <p className="text-lg font-semibold">
-                🚀 We're live!
-                <Link href="/auth/signin" className="underline hover:no-underline ml-2">
-                  Create your free account →
-                </Link>
-              </p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+              <p className="font-semibold">🔥 Upgrade to Premium Que-Master for just $7.99/Month!</p>
+              <Link
+                href="/subscription"
+                className="bg-white text-orange-600 font-bold text-sm px-4 py-1.5 rounded-full hover:bg-orange-50 transition-colors whitespace-nowrap"
+              >
+                Join Waitlist
+              </Link>
             </div>
           </div>
         </div>
@@ -101,7 +96,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Community</h3>
               <p className="text-gray-600">
-                Connect with fellow pitmasters, share photos, and learn from the best
+                Connect with fellow Que-Masters, share photos, and learn from the best
               </p>
             </div>
           </div>
@@ -133,7 +128,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Master the Art of BBQ?</h2>
           <p className="text-lg sm:text-xl mb-8 opacity-90">
-            Join our community of passionate pitmasters and take your BBQ skills to the next level
+            Join our QueMunity of passionate Que-Masters and take your BBQ skills to the next level
           </p>
           <Link
             href="/recipes"
@@ -159,7 +154,7 @@ export default function HomePage() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4 text-white">Community</h3>
+              <h3 className="font-semibold mb-4 text-white">QueMunity</h3>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/recipes" className="hover:text-white transition-colors">Recipes</Link></li>
                 <li><Link href="/community/forum" className="hover:text-white transition-colors">Forums</Link></li>

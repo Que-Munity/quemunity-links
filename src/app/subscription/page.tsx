@@ -52,22 +52,22 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              <h2 className="text-xl font-bold">Share Your Thoughts</h2>
+              <h2 className="text-xl font-bold">Join the Waitlist</h2>
             </div>
             <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-orange-100 text-sm mt-1">Help us build the perfect BBQ community</p>
+          <p className="text-orange-100 text-sm mt-1">Reserve your spot for Premium Que-Master</p>
         </div>
 
         <div className="px-6 py-5">
           {submitted ? (
             <div className="text-center py-6">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Thank You!</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">You&apos;re on the List!</h3>
               <p className="text-gray-600 mb-6">
-                Your feedback means the world to us. We&apos;ll use it to make Que-Munity even better!
+                We&apos;ll notify you the moment Premium Que-Master launches. Stay fired up! 🔥
               </p>
               <button
                 onClick={onClose}
@@ -101,11 +101,11 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">How do you feel about our site?</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">What features matter most to you?</label>
                 <textarea
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  placeholder="Tell us what you love, what could be better, or what features you'd like to see..."
+                  placeholder="Tell us what premium features you're most excited about..."
                   rows={4}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm resize-none"
                 />
@@ -126,7 +126,7 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Send Feedback
+                    Join the Waitlist
                   </>
                 )}
               </button>
@@ -187,14 +187,14 @@ export default function SubscriptionPage() {
 
         <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto">
           We&apos;re crafting an incredible premium experience for BBQ lovers. Ad-free browsing,
-          exclusive recipes, and pro pitmaster tools — all coming very soon.
+          exclusive recipes, and pro Que-Master tools — all coming very soon.
         </p>
 
         {/* Feature preview cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           {[
             { icon: '🚫', title: 'Ad-Free', desc: 'Browse without interruptions' },
-            { icon: '👑', title: 'Premium Recipes', desc: 'Exclusive pitmaster secrets' },
+            { icon: '👑', title: 'Premium Recipes', desc: 'Exclusive Que-Master secrets' },
             { icon: '📊', title: 'Creator Tools', desc: 'Analytics & monetization' },
           ].map((f) => (
             <div key={f.title} className="bg-white rounded-xl border border-gray-200 p-5">
@@ -208,16 +208,16 @@ export default function SubscriptionPage() {
         {/* Crown icon */}
         <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-8 mb-8">
           <Crown className="w-10 h-10 text-orange-500 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Be the First to Know</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Join the Waitlist</h2>
           <p className="text-gray-600 mb-6">
-            Leave us your feedback and we&apos;ll notify you the moment premium launches.
+            Reserve your spot and be the first to access Premium Que-Master when we launch.
           </p>
           <button
             onClick={() => setShowFeedback(true)}
             className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 mx-auto transition-colors"
           >
             <MessageSquare className="w-5 h-5" />
-            Share Your Feedback
+            Join the Waitlist
           </button>
         </div>
 

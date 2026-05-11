@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Github, Mail, Eye, EyeOff } from 'lucide-react';
+import { Mail, Eye, EyeOff, Facebook } from 'lucide-react';
 
 function SignInForm() {
   const [email, setEmail] = useState('');
@@ -111,7 +111,7 @@ function SignInForm() {
             🔥 Que-Munity
           </Link>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            {isSignUp ? 'Join the Que-Munity' : 'Welcome Back, Pitmaster'}
+            {isSignUp ? 'Join the QueMunity' : 'Welcome Back, Que-Master'}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {isSignUp 
@@ -125,16 +125,15 @@ function SignInForm() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-xl rounded-2xl sm:px-10">
           
-          {/* OAuth Buttons - Temporarily disabled */}
+          {/* OAuth Buttons - Coming Soon */}
           <div className="space-y-3">
             <div className="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-200 rounded-lg shadow-sm bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
               <Mail className="w-5 h-5 mr-3 text-gray-400" />
               Continue with Google (Coming Soon)
             </div>
-            
             <div className="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-200 rounded-lg shadow-sm bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
-              <Github className="w-5 h-5 mr-3 text-gray-400" />
-              Continue with GitHub (Coming Soon)
+              <Facebook className="w-5 h-5 mr-3 text-gray-400" />
+              Continue with Facebook (Coming Soon)
             </div>
           </div>
 

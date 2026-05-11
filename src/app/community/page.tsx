@@ -79,7 +79,7 @@ export default function CommunityPage() {
             Que-Munity 🔥
           </h1>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-            Where pitmasters gather to share knowledge, techniques, and stories around the virtual fire.
+            Where Que-Masters gather to share knowledge, techniques, and stories around the virtual fire.
           </p>
         </div>
 
@@ -263,7 +263,7 @@ export default function CommunityPage() {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">🤝 Community Guidelines</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm text-gray-700">
             {[
-              'Share knowledge and help fellow pitmasters',
+              'Share knowledge and help fellow Que-Masters',
               'Be respectful and constructive in discussions',
               'Give credit where credit is due',
               'Share high-quality photos and recipes',

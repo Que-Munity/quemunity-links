@@ -197,7 +197,7 @@ export default function RecipesPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">BBQ Recipes</h1>
-              <p className="text-base sm:text-xl text-gray-600">Discover authentic barbecue recipes from pitmasters around the world</p>
+              <p className="text-base sm:text-xl text-gray-600">Discover authentic barbecue recipes from Que-Masters around the world</p>
             </div>
             <Link
               href="/recipes/create"
