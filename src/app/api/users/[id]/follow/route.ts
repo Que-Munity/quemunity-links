@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/notify';
 
 // POST /api/users/[id]/follow - Follow a user
 export async function POST(
@@ -58,12 +59,28 @@ export async function POST(
       );
     }
 
+    // Get follower's username for the notification message
+    const follower = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { username: true, image: true },
+    });
+
     // Create follow relationship
     await prisma.follow.create({
       data: {
         followerId: currentUserId,
         followingId: userIdToFollow
       }
+    });
+
+    // Notify the followed user
+    await createNotification({
+      userId: userIdToFollow,
+      type: 'follow',
+      message: `${follower?.username ?? 'Someone'} started following you`,
+      link: `/profile/${follower?.username ?? currentUserId}`,
+      actorName: follower?.username,
+      actorImage: follower?.image ?? undefined,
     });
 
     return NextResponse.json({

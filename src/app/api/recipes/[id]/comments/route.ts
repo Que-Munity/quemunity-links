@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/notify';
 
 // GET /api/recipes/[id]/comments
 export async function GET(
@@ -54,6 +55,11 @@ export async function POST(
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
+    const commenterUser = await prisma.user.findUnique({
+      where: { id: session.user.id as string },
+      select: { username: true, image: true },
+    });
+
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
@@ -69,6 +75,40 @@ export async function POST(
         },
       },
     });
+
+    // Notify recipe author (if commenter != author)
+    const recipe = await prisma.recipe.findUnique({
+      where: { id },
+      select: { title: true, authorId: true },
+    });
+    if (recipe && recipe.authorId !== (session.user.id as string)) {
+      await createNotification({
+        userId: recipe.authorId,
+        type: 'comment',
+        message: `${commenterUser?.username ?? 'Someone'} commented on your recipe "${recipe.title}"`,
+        link: `/recipes/${id}`,
+        actorName: commenterUser?.username,
+        actorImage: commenterUser?.image ?? undefined,
+      });
+    }
+
+    // If it's a reply, also notify the parent comment author
+    if (parentId) {
+      const parent = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { userId: true },
+      });
+      if (parent && parent.userId !== (session.user.id as string) && parent.userId !== recipe?.authorId) {
+        await createNotification({
+          userId: parent.userId,
+          type: 'reply',
+          message: `${commenterUser?.username ?? 'Someone'} replied to your comment`,
+          link: `/recipes/${id}`,
+          actorName: commenterUser?.username,
+          actorImage: commenterUser?.image ?? undefined,
+        });
+      }
+    }
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

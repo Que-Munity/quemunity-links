@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/notify';
 
 // GET /api/users/[id]/favorites - Get user's favorite recipes
 export async function GET(
@@ -120,6 +123,14 @@ export async function POST(
       );
     }
     
+    const session = await getServerSession(authOptions);
+    const saverId = session?.user?.id as string | undefined;
+
+    // Get saver's username for notification
+    const saver = saverId
+      ? await prisma.user.findUnique({ where: { id: saverId }, select: { username: true, image: true } })
+      : null;
+
     // Add to favorites (upsert to avoid duplicates)
     const favorite = await prisma.favorite.upsert({
       where: {
@@ -139,11 +150,25 @@ export async function POST(
             id: true,
             title: true,
             slug: true,
+            authorId: true,
           },
         },
       },
     });
-    
+
+    // Notify the recipe author (not if they saved their own recipe)
+    const authorId = favorite.recipe.authorId;
+    if (authorId && authorId !== (saverId ?? params.id)) {
+      await createNotification({
+        userId: authorId,
+        type: 'save',
+        message: `${saver?.username ?? 'Someone'} saved your recipe "${favorite.recipe.title}"`,
+        link: `/recipes/${favorite.recipe.id}`,
+        actorName: saver?.username,
+        actorImage: saver?.image ?? undefined,
+      });
+    }
+
     return NextResponse.json(favorite, { status: 201 });
     
   } catch (error) {

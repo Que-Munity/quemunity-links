@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/notify';
 
 // GET /api/posts/[id]/comments
 export async function GET(
@@ -41,7 +42,7 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { content, parentId } = await request.json();
+    const { content, parentId, imageUrl } = await request.json();
 
     if (!content?.trim()) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
@@ -52,9 +53,15 @@ export async function POST(
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
+    const commenter = await prisma.user.findUnique({
+      where: { id: session.user.id as string },
+      select: { username: true, image: true },
+    });
+
     const comment = await prisma.postComment.create({
       data: {
         content: content.trim(),
+        imageUrl: imageUrl ?? null,
         postId: id,
         authorId: session.user.id as string,
         ...(parentId && { parentId }),
@@ -64,6 +71,36 @@ export async function POST(
         replies: { include: { author: { select: { id: true, username: true, image: true } } } },
       },
     });
+
+    // Notify post author (not themselves)
+    if (post.authorId !== (session.user.id as string)) {
+      await createNotification({
+        userId: post.authorId,
+        type: 'comment',
+        message: `${commenter?.username ?? 'Someone'} commented on your post "${post.title}"`,
+        link: `/community/forum/${id}`,
+        actorName: commenter?.username,
+        actorImage: commenter?.image ?? undefined,
+      });
+    }
+
+    // Notify parent comment author on reply
+    if (parentId) {
+      const parent = await prisma.postComment.findUnique({
+        where: { id: parentId },
+        select: { authorId: true },
+      });
+      if (parent && parent.authorId !== (session.user.id as string) && parent.authorId !== post.authorId) {
+        await createNotification({
+          userId: parent.authorId,
+          type: 'reply',
+          message: `${commenter?.username ?? 'Someone'} replied to your comment`,
+          link: `/community/forum/${id}`,
+          actorName: commenter?.username,
+          actorImage: commenter?.image ?? undefined,
+        });
+      }
+    }
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

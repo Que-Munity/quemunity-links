@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Clock, User, Tag, AlertCircle, Send, Trash2, Reply } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Clock, Tag, AlertCircle, Send, Trash2, Reply, Image, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PostAuthor { id: string; username: string; image?: string | null }
 
@@ -26,6 +26,7 @@ interface Post {
 interface PostComment {
   id: string;
   content: string;
+  imageUrl?: string | null;
   createdAt: string;
   author: PostAuthor;
   replies: PostComment[];
@@ -67,14 +68,18 @@ function Avatar({ username, image }: { username: string; image?: string | null }
 }
 
 function CommentItem({
-  comment, currentUserId, postId, onDeleted, onReply,
+  comment, currentUserId, postId, onDeleted, onReply, depth = 0,
 }: {
   comment: PostComment;
   currentUserId?: string;
   postId: string;
   onDeleted: () => void;
   onReply: (parentId: string, username: string) => void;
+  depth?: number;
 }) {
+  const [showReplies, setShowReplies] = useState(true);
+  const replies = comment.replies ?? [];
+
   const handleDelete = async () => {
     if (!confirm('Delete this comment?')) return;
     const res = await fetch(`/api/posts/${postId}/comments?commentId=${comment.id}`, { method: 'DELETE' });
@@ -82,42 +87,66 @@ function CommentItem({
   };
 
   return (
-    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-      <Avatar username={comment.author.username} image={comment.author.image} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-medium text-sm text-gray-900">{comment.author.username}</span>
-          <span className="text-xs text-gray-500">{formatTimeAgo(comment.createdAt)}</span>
-        </div>
-        <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
-        <div className="flex gap-3 mt-2">
-          <button
-            onClick={() => onReply(comment.id, comment.author.username)}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600"
-          >
-            <Reply className="w-3 h-3" /> Reply
-          </button>
-          {currentUserId === comment.author.id && (
-            <button onClick={handleDelete} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500">
-              <Trash2 className="w-3 h-3" /> Delete
-            </button>
-          )}
-        </div>
-        {comment.replies.length > 0 && (
-          <div className="mt-3 space-y-3 border-l-2 border-orange-100 pl-4">
-            {comment.replies.map(reply => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                currentUserId={currentUserId}
-                postId={postId}
-                onDeleted={onDeleted}
-                onReply={onReply}
-              />
-            ))}
+    <div className={depth > 0 ? 'ml-8 mt-3 border-l-2 border-orange-100 pl-4' : ''}>
+      <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+        <Avatar username={comment.author.username} image={comment.author.image} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium text-sm text-gray-900">{comment.author.username}</span>
+            <span className="text-xs text-gray-500">{formatTimeAgo(comment.createdAt)}</span>
           </div>
-        )}
+          <p className="text-gray-700 text-sm whitespace-pre-wrap">{comment.content}</p>
+          {comment.imageUrl && (
+            <div className="mt-2">
+              <img
+                src={comment.imageUrl}
+                alt="Comment attachment"
+                className="max-h-56 rounded-lg object-cover cursor-pointer"
+                onClick={() => window.open(comment.imageUrl!, '_blank')}
+              />
+            </div>
+          )}
+          <div className="flex gap-3 mt-2">
+            {depth === 0 && (
+              <button
+                onClick={() => onReply(comment.id, comment.author.username)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600"
+              >
+                <Reply className="w-3 h-3" /> Reply
+              </button>
+            )}
+            {currentUserId === comment.author.id && (
+              <button onClick={handleDelete} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500">
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+            )}
+            {replies.length > 0 && (
+              <button
+                onClick={() => setShowReplies(!showReplies)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600 ml-auto"
+              >
+                {showReplies ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
+      {showReplies && replies.length > 0 && (
+        <div className="space-y-3">
+          {replies.map(reply => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              currentUserId={currentUserId}
+              postId={postId}
+              onDeleted={onDeleted}
+              onReply={onReply}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -131,9 +160,11 @@ export default function PostDetailPage() {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userVote, setUserVote] = useState<number | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchPost = useCallback(async () => {
     try {
@@ -170,6 +201,14 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || submitting) return;
@@ -178,11 +217,17 @@ export default function PostDetailPage() {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newComment.trim(), parentId: replyTo?.id ?? null }),
+        body: JSON.stringify({
+          content: newComment.trim(),
+          parentId: replyTo?.id ?? null,
+          imageUrl: imagePreview ?? null,
+        }),
       });
       if (res.ok) {
         setNewComment('');
         setReplyTo(null);
+        setImagePreview(null);
+        if (fileRef.current) fileRef.current.value = '';
         await fetchComments();
         await fetchPost();
       } else {
@@ -347,7 +392,27 @@ export default function PostDetailPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                     rows={4}
                   />
-                  <div className="flex justify-end mt-3">
+                  {imagePreview && (
+                    <div className="relative mt-2 inline-block">
+                      <img src={imagePreview} alt="Preview" className="max-h-40 rounded-lg object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => { setImagePreview(null); if (fileRef.current) fileRef.current.value = ''; }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                  <div className="flex items-center justify-between mt-3">
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-orange-600 px-2 py-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+                    >
+                      <Image className="w-4 h-4" /> Add photo
+                    </button>
                     <button
                       type="submit"
                       disabled={!newComment.trim() || submitting}

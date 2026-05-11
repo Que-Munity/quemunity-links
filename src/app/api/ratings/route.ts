@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notify";
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,6 +77,21 @@ export async function POST(request: NextRequest) {
             userId: user.id,
             recipeId,
           },
+        });
+      }
+
+      // Notify recipe author of new rating
+      const recipe = await prisma.recipe.findUnique({
+        where: { id: recipeId },
+        select: { title: true, authorId: true },
+      });
+      if (recipe && recipe.authorId !== user.id) {
+        await createNotification({
+          userId: recipe.authorId,
+          type: 'like',
+          message: `${user.username} rated your recipe "${recipe.title}" ${rating} star${rating !== 1 ? 's' : ''}`,
+          link: `/recipes/${recipeId}`,
+          actorName: user.username,
         });
       }
     }
