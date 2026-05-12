@@ -5,6 +5,14 @@ import { Calculator, Clock, Thermometer, Timer, Flame, Scale } from 'lucide-reac
 export default function ToolsPage() {
   const tools = [
     {
+      id: 'bbq-calculator',
+      title: 'BBQ Calculator',
+      description: 'How much meat to buy, when to start cooking — supports brisket, pulled pork, ribs, chicken & more',
+      icon: Calculator,
+      href: '/tools/bbq-calculator',
+      color: 'bg-orange-600',
+    },
+    {
       id: 'smoking-time',
       title: 'Smoking Time Calculator',
       description: 'Calculate cooking times for different cuts of meat based on weight and temperature',
